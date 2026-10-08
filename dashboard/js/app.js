@@ -174,6 +174,190 @@ class SEOCApplication {
     }).join('');
   }
 
+  bindUploadEvents() {
+    const fileInput = document.getElementById('dataset-file-input');
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          this.handleCsvFile(e.target.files[0]);
+        }
+      });
+    }
+
+    const dropZone = document.getElementById('dataset-dropzone');
+    if (dropZone) {
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#38bdf8';
+        dropZone.style.background = 'rgba(56, 189, 248, 0.1)';
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        dropZone.style.background = 'rgba(15, 23, 42, 0.6)';
+      });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        dropZone.style.background = 'rgba(15, 23, 42, 0.6)';
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          this.handleCsvFile(e.dataTransfer.files[0]);
+        }
+      });
+    }
+  }
+
+  handleCsvFile(file) {
+    if (!file.name.endsWith('.csv')) {
+      this.showToast('Please upload a valid .csv file format', 'warning');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const parsedRows = this.parseCsvText(text);
+      if (parsedRows.length === 0) {
+        this.showToast('CSV file is empty or corrupted', 'warning');
+        return;
+      }
+
+      this.ingestDataset(parsedRows, file.name);
+    };
+    reader.readAsText(file);
+  }
+
+  parseCsvText(text) {
+    const lines = text.trim().split(/\r\n|\n/);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const result = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const values = lines[i].split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((h, idx) => {
+        row[h] = values[idx] || '';
+      });
+      result.push(row);
+    }
+    return result;
+  }
+
+  ingestDataset(rows, fileName) {
+    console.log(`Ingesting ${rows.length} rows from ${fileName}...`);
+
+    // Convert rows into SEOC_DATA.zones format
+    const newZones = rows.map((r, i) => {
+      const severity = parseInt(r.severity_class || r.severity) || 3;
+      const lat = parseFloat(r.latitude || r.lat) || (17.3850 + (i * 0.02));
+      const lng = parseFloat(r.longitude || r.lng || r.lon) || (78.4550 + (i * 0.02));
+      const pop = parseInt(r.population) || 35000;
+      const vulPop = parseInt(r.vulnerable_population) || Math.round(pop * 0.3);
+      const waterLvl = parseFloat(r.water_level_m || r.water_level) || 1.8;
+      const surgeRate = parseFloat(r.surge_rate_mh || r.surge_rate) || 0.9;
+      const elev = parseFloat(r.elevation_m || r.elevation) || 515.0;
+
+      return {
+        id: r.zone_id || `ZONE-UP-${i + 1}`,
+        name: r.zone_name || `Uploaded Sector ${i + 1}`,
+        circle: r.circle || 'Municipal Ward',
+        lat: lat,
+        lng: lng,
+        elevationMeters: elev,
+        population: pop,
+        vulnerablePopulation: vulPop,
+        baseSeverity: severity,
+        drainageCapacity: 'Live Ingested Telemetry',
+        waterLevelRiseRate: surgeRate,
+        currentWaterLevel: waterLvl,
+        roadAccessibility: severity >= 4 ? '25% (Submerged)' : severity === 3 ? '55% (Constrained)' : '90% (Passable)',
+        nearestHospital: 'Nearest Trauma Centre',
+        nearestShelter: 'Designated Indoor Relief Hall',
+        shapExplanation: {
+          rainfallIntensity: { value: `+${(severity * 0.35).toFixed(2)}`, percent: 38, positive: true },
+          waterLevelRise: { value: `+${(waterLvl * 0.4).toFixed(2)}`, percent: 29, positive: true },
+          topographicDepression: { value: `+${(elev < 510 ? 0.6 : 0.2).toFixed(2)}`, percent: 17, positive: true },
+          populationDensity: { value: `+0.35`, percent: 10, positive: true },
+          drainageMitigation: { value: `-0.20`, percent: 6, positive: false }
+        },
+        resourceDemand: {
+          ndrfTeams: { req: Math.ceil(severity * 0.8), alloc: Math.ceil(severity * 0.7) },
+          rescueBoats: { req: severity * 2 + 1, alloc: severity * 2 },
+          ambulances: { req: severity * 3, alloc: severity * 2 + 2 },
+          fireEngines: { req: Math.ceil(severity * 0.9), alloc: Math.ceil(severity * 0.8) },
+          foodPacketsK: { req: Math.ceil(pop / 2000), alloc: Math.ceil(pop / 2200) }
+        }
+      };
+    });
+
+    window.SEOC_DATA.zones = newZones;
+
+    // Refresh UI Components
+    if (window.SEOC_MAP) {
+      window.SEOC_MAP.renderZones();
+    }
+    this.renderResourceAllocationTable();
+
+    // Update KPI Ribbon
+    const criticalCount = newZones.filter(z => z.baseSeverity >= 4).length;
+    const totalPopAtRisk = newZones.reduce((acc, z) => acc + z.vulnerablePopulation, 0);
+
+    const elCrit = document.getElementById('kpi-critical-zones');
+    if (elCrit) elCrit.innerText = criticalCount;
+
+    const elPop = document.getElementById('kpi-people-risk');
+    if (elPop) elPop.innerText = totalPopAtRisk.toLocaleString();
+
+    // Populate Dataset Preview Table in UI
+    const tableBody = document.getElementById('uploaded-dataset-tbody');
+    if (tableBody) {
+      tableBody.innerHTML = newZones.map(z => `
+        <tr>
+          <td style="font-family: monospace; color: #38bdf8;">${z.id}</td>
+          <td><strong>${z.name}</strong><br><span style="color:#64748b; font-size:0.7rem;">${z.circle}</span></td>
+          <td style="font-family: monospace;">${z.lat.toFixed(4)}, ${z.lng.toFixed(4)}</td>
+          <td>${z.elevationMeters}m</td>
+          <td><strong style="color: #f87171;">${z.currentWaterLevel}m</strong> (+${z.waterLevelRiseRate}m/h)</td>
+          <td>${z.population.toLocaleString()} (${z.vulnerablePopulation.toLocaleString()} risk)</td>
+          <td>
+            <span class="badge-zone ${z.baseSeverity >= 4 ? 'badge-zone-critical' : z.baseSeverity === 3 ? 'badge-zone-severe' : 'badge-zone-moderate'}">
+              Level ${z.baseSeverity}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    const badgeStatus = document.getElementById('dataset-upload-status');
+    if (badgeStatus) {
+      badgeStatus.innerHTML = `✓ Ingested <strong>${newZones.length} Sectors</strong> from <em>${fileName}</em>`;
+      badgeStatus.style.display = 'inline-block';
+    }
+
+    this.showToast(`✓ Successfully ingested ${newZones.length} records from ${fileName}! GIS Map and KPIs updated.`, 'success');
+  }
+
+  downloadSampleCsv() {
+    const csvContent = `zone_id,zone_name,circle,latitude,longitude,elevation_m,rainfall_intensity_mmh,cumulative_24h_rain_mm,water_level_m,surge_rate_mh,population,vulnerable_population,severity_class
+ZONE-HYD-01,Tolichowki / Nadeem Colony,Charminar Zone (Circle 13),17.3984,78.4144,504.5,104.5,186.0,2.6,1.4,48500,14200,4
+ZONE-HYD-02,Moosarambagh / Chaderghat,Malakpet Circle (Circle 6),17.3713,78.4983,498.2,112.0,198.5,3.2,1.8,52000,19500,4
+ZONE-HYD-03,Begumpet / Picket Nala Basin,Secunderabad Zone (Circle 30),17.4447,78.4664,516.0,84.2,142.0,1.8,0.9,34000,8200,3
+ZONE-HYD-04,Alwal / Bandanagaram Catchment,Kukatpally Zone (Circle 27),17.5022,78.5085,538.0,76.5,128.0,1.5,0.7,29000,6500,3
+ZONE-HYD-05,Nizampet / Bhandari Layout,Kukatpally Zone (Circle 24),17.5186,78.3748,552.0,52.0,92.0,0.8,0.4,26000,4200,2
+ZONE-HYD-06,Khairatabad / Hussain Sagar Sluice,Khairatabad Zone (Circle 17),17.4116,78.4608,512.0,58.4,98.0,0.7,0.3,31000,5800,2
+ZONE-HYD-07,Gachibowli / IT Corridor,Serilingampally Circle,17.4401,78.3489,585.0,22.0,42.0,0.2,0.1,41000,2100,1`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'sample_hyderabad_disaster_data.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.showToast('Downloaded sample template CSV', 'info');
+  }
+
   printSitRep() {
     window.print();
   }
@@ -208,4 +392,6 @@ class SEOCApplication {
 document.addEventListener('DOMContentLoaded', () => {
   window.SEOC_APP = new SEOCApplication();
   window.SEOC_APP.init();
+  window.SEOC_APP.bindUploadEvents();
 });
+

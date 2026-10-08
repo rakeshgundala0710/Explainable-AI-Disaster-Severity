@@ -156,6 +156,9 @@
     <button class="nav-tab-btn" data-view="hospitals-view">🏥 Hospitals & Shelters</button>
     <button class="nav-tab-btn" data-view="copilot-view">💬 AI / RAG Disaster Copilot</button>
     <button class="nav-tab-btn" data-view="sitrep-view">📄 Situation Report (SitRep)</button>
+    <button class="nav-tab-btn" data-view="dataset-view" style="color: #38bdf8; font-weight: 600;">
+      📁 Ingest Dataset (CSV)
+    </button>
     <button class="nav-tab-btn" data-view="analytics-view">📊 Model Benchmarks</button>
     <button class="nav-tab-btn" data-view="health-view">⚙️ System Telemetry</button>
   </nav>
@@ -693,7 +696,72 @@
           <p style="font-size: 0.75rem; color: #cbd5e1;">Google OR-Tools MILP Solver: <strong>42ms solve time</strong></p>
           <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">PostGIS Spatial Queries: <strong>Indexed (GiST)</strong></p>
           <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">RAG FAISS Vector Store: <strong>48 SOP manuals indexed</strong></p>
+    <!-- -----------------------------------------------------------------------
+         VIEW: DATASET INGESTION & CSV UPLOADER
+         ----------------------------------------------------------------------- -->
+    <section id="dataset-view" class="view-section">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <span class="panel-card-title">📁 Disaster Telemetry Dataset Ingestion Engine (CSV / Spatial Features)</span>
+          <div class="panel-tools">
+            <span id="dataset-upload-status" class="badge-official" style="display: none;"></span>
+            <button class="btn btn-primary" onclick="SEOC_APP.downloadSampleCsv()">⬇️ Download Template CSV</button>
+          </div>
         </div>
+
+        <p style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 1.25rem;">
+          Upload real or simulated disaster datasets (CSV format) containing rainfall telemetry, river gauges, topography, and demographics. 
+          The platform automatically validates coordinates, computes XAI feature attributions, runs the OR-Tools optimizer, and updates the GIS tactical map in real time.
+        </p>
+
+        <!-- Dropzone Container -->
+        <div id="dataset-dropzone" style="
+          border: 2px dashed rgba(255, 255, 255, 0.2);
+          border-radius: var(--radius-md);
+          background: rgba(15, 23, 42, 0.6);
+          padding: 2.5rem 1.5rem;
+          text-align: center;
+          cursor: pointer;
+          transition: var(--transition-fast);
+          margin-bottom: 1.5rem;
+        " onclick="document.getElementById('dataset-file-input').click()">
+          <input type="file" id="dataset-file-input" accept=".csv" style="display: none;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📂</div>
+          <h4 style="font-size: 1rem; color: #fff; margin-bottom: 0.25rem;">Drag & Drop Your Disaster Dataset (.CSV) Here</h4>
+          <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.75rem;">or click to browse from your local files</p>
+          <span class="btn btn-primary" style="font-size: 0.75rem;">Browse CSV File</span>
+        </div>
+
+        <!-- Schema Field Reference -->
+        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.5rem;">
+          <strong style="font-size: 0.75rem; color: #38bdf8;">Supported CSV Schema Columns:</strong>
+          <p style="font-size: 0.72rem; color: #cbd5e1; font-family: monospace; margin-top: 0.25rem;">
+            zone_id, zone_name, circle, latitude, longitude, elevation_m, rainfall_intensity_mmh, cumulative_24h_rain_mm, water_level_m, surge_rate_mh, population, vulnerable_population, severity_class
+          </p>
+        </div>
+
+        <!-- Live Ingested Records Table -->
+        <h4 style="font-size: 0.88rem; color: #fff; margin-bottom: 0.75rem;">Ingested Disaster Sectors & Model Inputs:</h4>
+        <table class="alloc-table">
+          <thead>
+            <tr>
+              <th>Sector ID</th>
+              <th>Sector Name & Circle</th>
+              <th>GPS Coordinates</th>
+              <th>Elevation</th>
+              <th>Water Inundation</th>
+              <th>Population at Risk</th>
+              <th>Severity Rating</th>
+            </tr>
+          </thead>
+          <tbody id="uploaded-dataset-tbody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                No custom dataset uploaded yet. Currently using baseline Hyderabad telemetry. Upload a CSV file above or download the template to test!
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 

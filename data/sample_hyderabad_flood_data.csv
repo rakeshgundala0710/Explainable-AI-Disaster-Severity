@@ -1,0 +1,11 @@
+zone_id,zone_name,circle,latitude,longitude,elevation_m,rainfall_intensity_mmh,cumulative_24h_rain_mm,water_level_m,surge_rate_mh,population,vulnerable_population,severity_class
+ZONE-HYD-01,Tolichowki / Nadeem Colony,Charminar Zone (Circle 13),17.3984,78.4144,504.5,104.5,186.0,2.6,1.4,48500,14200,4
+ZONE-HYD-02,Moosarambagh / Chaderghat,Malakpet Circle (Circle 6),17.3713,78.4983,498.2,112.0,198.5,3.2,1.8,52000,19500,4
+ZONE-HYD-03,Begumpet / Picket Nala Basin,Secunderabad Zone (Circle 30),17.4447,78.4664,516.0,84.2,142.0,1.8,0.9,34000,8200,3
+ZONE-HYD-04,Alwal / Bandanagaram Catchment,Kukatpally Zone (Circle 27),17.5022,78.5085,538.0,76.5,128.0,1.5,0.7,29000,6500,3
+ZONE-HYD-05,Nizampet / Bhandari Layout,Kukatpally Zone (Circle 24),17.5186,78.3748,552.0,52.0,92.0,0.8,0.4,26000,4200,2
+ZONE-HYD-06,Khairatabad / Hussain Sagar Sluice,Khairatabad Zone (Circle 17),17.4116,78.4608,512.0,58.4,98.0,0.7,0.3,31000,5800,2
+ZONE-HYD-07,Gachibowli / IT Corridor,Serilingampally Circle,17.4401,78.3489,585.0,22.0,42.0,0.2,0.1,41000,2100,1
+ZONE-HYD-08,Dilsukhnagar / Saroornagar Catchment,LB Nagar Zone,17.3688,78.5247,508.5,95.0,165.0,2.1,1.1,46000,11800,4
+ZONE-HYD-09,Kukatpally / Yellammabanda Basin,Kukatpally Circle,17.4938,78.3995,540.0,68.0,115.0,1.2,0.6,38000,7400,3
+ZONE-HYD-10,Secunderabad / Cantonment Ridge,Secunderabad Zone,17.4334,78.5016,560.0,18.5,35.0,0.1,0.0,32000,1200,0

@@ -97,15 +97,53 @@ with kpi5:
 
 st.divider()
 
+# Sidebar Dataset Uploader
+st.sidebar.divider()
+st.sidebar.subheader("📁 Upload Custom Dataset")
+uploaded_file = st.sidebar.file_uploader("Upload Disaster CSV Dataset", type=["csv"])
+
+# Default Hyderabad Data
+default_zones_dict = {
+    "Zone": ["Tolichowki", "Moosarambagh", "Begumpet", "Alwal", "Nizampet", "Khairatabad", "Gachibowli"],
+    "lat": [17.3984, 17.3713, 17.4447, 17.5022, 17.5186, 17.4116, 17.4401],
+    "lon": [78.4144, 78.4983, 78.4664, 78.5085, 78.3748, 78.4608, 78.3489],
+    "Severity": [4, 4, 3, 3, 2, 2, 1],
+    "WaterLevel_m": [2.6, 3.2, 1.8, 1.5, 0.8, 0.7, 0.2]
+}
+df_zones = pd.DataFrame(default_zones_dict)
+
+if uploaded_file is not None:
+    try:
+        user_df = pd.read_csv(uploaded_file)
+        st.sidebar.success(f"✓ Loaded {len(user_df)} rows from {uploaded_file.name}")
+        # Map common column names if present
+        lat_col = next((c for c in user_df.columns if c.lower() in ['latitude', 'lat']), None)
+        lon_col = next((c for c in user_df.columns if c.lower() in ['longitude', 'lon', 'lng']), None)
+        name_col = next((c for c in user_df.columns if c.lower() in ['zone_name', 'zone', 'name']), None)
+        sev_col = next((c for c in user_df.columns if c.lower() in ['severity_class', 'severity']), None)
+        water_col = next((c for c in user_df.columns if c.lower() in ['water_level_m', 'water_level']), None)
+
+        if lat_col and lon_col:
+            df_zones = pd.DataFrame({
+                "Zone": user_df[name_col] if name_col else [f"Zone {i+1}" for i in range(len(user_df))],
+                "lat": user_df[lat_col].astype(float),
+                "lon": user_df[lon_col].astype(float),
+                "Severity": user_df[sev_col].astype(int) if sev_col else [3]*len(user_df),
+                "WaterLevel_m": user_df[water_col].astype(float) if water_col else [1.5]*len(user_df)
+            })
+    except Exception as e:
+        st.sidebar.error(f"Error parsing CSV: {e}")
+
 # Navigation Tabs
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "🏢 War Room & Map",
     "🤖 Severity & LSTM",
     "🔍 Explainable AI (SHAP)",
     "⚖️ Resource Optimization",
     "🛡️ Officer Approval (HITL)",
     "💬 RAG AI Copilot",
-    "📄 Situation Report (SitRep)"
+    "📄 Situation Report (SitRep)",
+    "📁 Dataset Explorer"
 ])
 
 # -------------------------------------------------------------------------
@@ -117,14 +155,6 @@ with tab1:
     col_map_left, col_map_right = st.columns([2, 1])
     
     with col_map_left:
-        # Hyderabad Data Coordinates
-        df_zones = pd.DataFrame({
-            "Zone": ["Tolichowki", "Moosarambagh", "Begumpet", "Alwal", "Nizampet", "Khairatabad", "Gachibowli"],
-            "lat": [17.3984, 17.3713, 17.4447, 17.5022, 17.5186, 17.4116, 17.4401],
-            "lon": [78.4144, 78.4983, 78.4664, 78.5085, 78.3748, 78.4608, 78.3489],
-            "Severity": [4, 4, 3, 3, 2, 2, 1],
-            "WaterLevel_m": [2.6, 3.2, 1.8, 1.5, 0.8, 0.7, 0.2]
-        })
         st.map(df_zones, latitude='lat', longitude='lon', size="Severity")
         st.caption("Map displays flood zones sized by severity rating. (For full interactive WebGIS, view dashboard/index.html)")
 
@@ -298,3 +328,35 @@ with tab7:
     ```
     """)
     st.button("Export SitRep PDF / Transmit to National Disaster Management Authority")
+
+# -------------------------------------------------------------------------
+# TAB 8: DATASET EXPLORER & CSV INGESTION
+# -------------------------------------------------------------------------
+with tab8:
+    st.subheader("📁 Disaster Telemetry Dataset Ingestion Engine")
+    st.markdown("Upload, inspect, and validate disaster datasets with GIS coordinates, hydrological readings, and demographic vulnerability indices.")
+    
+    col_d1, col_d2 = st.columns([3, 1])
+    with col_d1:
+        st.markdown("#### Active Dataset Overview")
+        st.dataframe(df_zones, use_container_width=True)
+    
+    with col_d2:
+        st.markdown("#### Dataset Diagnostics")
+        st.metric("Total Ingested Sectors", len(df_zones))
+        critical_count = int((df_zones["Severity"] >= 4).sum())
+        st.metric("Critical Sectors Detected", critical_count)
+        
+        # Download Sample Template
+        sample_path = os.path.join(os.path.dirname(__file__), "..", "data", "sample_hyderabad_flood_data.csv")
+        if os.path.exists(sample_path):
+            with open(sample_path, "r") as f:
+                csv_bytes = f.read()
+            st.download_button(
+                label="⬇️ Download Sample Template CSV",
+                data=csv_bytes,
+                file_name="sample_hyderabad_flood_data.csv",
+                mime="text/csv"
+            )
+        st.caption("Schema: zone_id, zone_name, lat, lon, elevation_m, rainfall_intensity_mmh, water_level_m, severity_class")
+
