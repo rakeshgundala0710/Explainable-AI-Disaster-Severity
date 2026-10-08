@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL with PostGIS Spatial Extensions
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: seoc-postgis-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: seoc_secure_password
+      POSTGRES_DB: seoc_disaster_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # 2. Redis Telemetry Cache
+  redis:
+    image: redis:7-alpine
+    container_name: seoc-redis-cache
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 3. FastAPI AI Backend Service
+  backend:
+    build: .
+    container_name: seoc-backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://postgres:seoc_secure_password@db:5432/seoc_disaster_db
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=production
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+  # 4. Streamlit Academic Prototype Dashboard
+  dashboard:
+    build: .
+    container_name: seoc-dashboard
+    restart: always
+    environment:
+      - BACKEND_API_URL=http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+    command: streamlit run dashboard/app.py --server.port 8501 --server.address 0.0.0.0
+
+volumes:
+  pgdata:
