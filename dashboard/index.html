@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEOC Command Centre — Explainable AI Disaster Severity & Resource Allocation Platform</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet GIS CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom Design System CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- =========================================================================
+       TOP COMMAND HEADER
+       ========================================================================= -->
+  <header class="command-header">
+    <div class="brand-section">
+      <div class="govt-crest">🏛️</div>
+      <div class="brand-titles">
+        <h1>
+          STATE EMERGENCY OPERATIONS CENTRE (SEOC)
+          <span class="badge-official">Govt. Decision Support</span>
+        </h1>
+        <p>Explainable AI Disaster Severity Prediction & Dynamic Multi-Resource Allocation | Hyderabad Urban Flood Division</p>
+      </div>
+    </div>
+
+    <!-- 5-Stage Simulation Timeline Controller -->
+    <div class="simulation-pill-box">
+      <div class="sim-label">
+        <span class="pulse-dot"></span>
+        <span>Simulation Feed:</span>
+      </div>
+      <select id="sim-stage-select" class="sim-stage-select">
+        <option value="0">Stage 1: Pre-Monsoon Baseline (Normal)</option>
+        <option value="1">Stage 2: Heavy Downpour Commences (Watch)</option>
+        <option value="2">Stage 3: Waterlogging & Sluice Overflow (Moderate)</option>
+        <option value="3" selected>Stage 4: Musi River Flash Surge (Critical)</option>
+        <option value="4">Stage 5: Catastrophic Multi-Zone Inundation (Emergency)</option>
+      </select>
+      <button id="sim-next-btn" class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.68rem;">Advance ⏩</button>
+    </div>
+
+    <div class="header-actions">
+      <div class="telemetry-time">
+        <div class="time-val" id="live-clock-time">--:--:-- IST</div>
+        <div class="date-val" id="live-clock-date">-- --- 2026</div>
+      </div>
+      <div class="officer-badge">
+        <div class="officer-avatar">RG</div>
+        <div class="officer-info">
+          <span class="officer-name">Rakesh Gundala (IAS)</span>
+          <span class="officer-role">SEOC Disaster Commander</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       TOP KPI METRICS STRIP
+       ========================================================================= -->
+  <section class="kpi-strip">
+    <div class="kpi-card kpi-critical">
+      <div class="kpi-header">
+        <span class="kpi-title">Threat Status</span>
+        <span class="kpi-icon">⚠️</span>
+      </div>
+      <div class="kpi-value" id="kpi-threat-level" style="font-size: 1.15rem; color: #ef4444;">CRITICAL (RED ALERT)</div>
+      <div class="kpi-subtext">IMD Severe Rain Radar Active</div>
+    </div>
+
+    <div class="kpi-card kpi-critical">
+      <div class="kpi-header">
+        <span class="kpi-title">Critical Sectors</span>
+        <span class="kpi-icon">📍</span>
+      </div>
+      <div class="kpi-value" id="kpi-critical-zones">4</div>
+      <div class="kpi-subtext" style="color: #f87171;">Tolichowki, Moosarambagh, Begumpet</div>
+    </div>
+
+    <div class="kpi-card kpi-warning">
+      <div class="kpi-header">
+        <span class="kpi-title">Rainfall Rate</span>
+        <span class="kpi-icon">🌧️</span>
+      </div>
+      <div class="kpi-value" id="kpi-rainfall-rate">104.5 mm/h</div>
+      <div class="kpi-subtext">Cumulative: 186mm (24h)</div>
+    </div>
+
+    <div class="kpi-card kpi-critical">
+      <div class="kpi-header">
+        <span class="kpi-title">Musi Gauge Height</span>
+        <span class="kpi-icon">🌊</span>
+      </div>
+      <div class="kpi-value" id="kpi-musi-gauge">515.1m MSL</div>
+      <div class="kpi-subtext" style="color: #f87171;">+1.1m above Danger Mark</div>
+    </div>
+
+    <div class="kpi-card kpi-warning">
+      <div class="kpi-header">
+        <span class="kpi-title">Pop. At Direct Risk</span>
+        <span class="kpi-icon">👥</span>
+      </div>
+      <div class="kpi-value" id="kpi-people-risk">142,000</div>
+      <div class="kpi-subtext">Low-lying catchment wards</div>
+    </div>
+
+    <div class="kpi-card kpi-success">
+      <div class="kpi-header">
+        <span class="kpi-title">OR-Tools Deployment</span>
+        <span class="kpi-icon">⚡</span>
+      </div>
+      <div class="kpi-value">78%</div>
+      <div class="kpi-subtext">27 / 31 Boats Deployed</div>
+    </div>
+
+    <div class="kpi-card kpi-success">
+      <div class="kpi-header">
+        <span class="kpi-title">Hospital ICU Beds</span>
+        <span class="kpi-icon">🏥</span>
+      </div>
+      <div class="kpi-value">83 Avail</div>
+      <div class="kpi-subtext">Gandhi, Osmania, NIMS</div>
+    </div>
+  </section>
+
+  <!-- Live Simulation Broadcast Ribbon -->
+  <div style="background: rgba(17, 24, 39, 0.9); border-bottom: 1px solid var(--border-subtle); padding: 0.45rem 1.5rem; font-size: 0.76rem; display: flex; align-items: center; justify-content: space-between;">
+    <div id="live-alert-ticker-content" style="color: #e2e8f0; display: flex; align-items: center; gap: 0.5rem;">
+      <span style="color: #ef4444; font-weight: bold; font-family: monospace;">[URGENT SEOC BROADCAST - 14:00 IST]</span> 
+      STAGE 4: Musi river breaches banks at Moosarambagh causeway. 4 low-lying circles inundated. SDRF & NDRF Battalions deployed.
+    </div>
+    <span class="badge-official" style="font-size: 0.65rem;">TELEMETRY LIVE</span>
+  </div>
+
+  <!-- =========================================================================
+       NAVIGATION STRIP (12 VIEWS)
+       ========================================================================= -->
+  <nav class="nav-tab-strip">
+    <button class="nav-tab-btn active" data-view="war-room-view">🏢 War Room Overview</button>
+    <button class="nav-tab-btn" data-view="gis-map-view">🗺️ Live GIS Disaster Map</button>
+    <button class="nav-tab-btn" data-view="prediction-view">🤖 Severity Prediction & LSTM</button>
+    <button class="nav-tab-btn" data-view="xai-view">🔍 Explainable AI (SHAP & LIME)</button>
+    <button class="nav-tab-btn" data-view="resources-view">⚖️ Dynamic Resource Allocation</button>
+    <button class="nav-tab-btn" data-view="hitl-view">
+      🛡️ Officer Review (HITL) <span class="tab-badge">2 Pending</span>
+    </button>
+    <button class="nav-tab-btn" data-view="hospitals-view">🏥 Hospitals & Shelters</button>
+    <button class="nav-tab-btn" data-view="copilot-view">💬 AI / RAG Disaster Copilot</button>
+    <button class="nav-tab-btn" data-view="sitrep-view">📄 Situation Report (SitRep)</button>
+    <button class="nav-tab-btn" data-view="analytics-view">📊 Model Benchmarks</button>
+    <button class="nav-tab-btn" data-view="health-view">⚙️ System Telemetry</button>
+  </nav>
+
+  <!-- =========================================================================
+       MAIN WORKSPACE VIEWS
+       ========================================================================= -->
+  <main class="workspace-container">
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 1: WAR ROOM OVERVIEW
+         ----------------------------------------------------------------------- -->
+    <section id="war-room-view" class="view-section active-view">
+      <div class="grid-war-room">
+        <!-- Left: Map Preview & Threat Matrix -->
+        <div>
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <span class="panel-card-title">
+                <span>📍 Geospatial Emergency Topology — Hyderabad Flood Risk Polygons</span>
+              </span>
+              <div class="panel-tools">
+                <span class="chip-tag chip-red">Level 4: Red Alert Active</span>
+                <button class="btn btn-primary" onclick="SEOC_APP.switchTab('gis-map-view')">Maximize Map ↗</button>
+              </div>
+            </div>
+            
+            <div id="gis-map-canvas" style="height: 440px;"></div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 0.75rem; font-size: 0.72rem; color: #94a3b8;">
+              <div><span style="color:#ef4444;">●</span> Red: Critical (Water > 2.0m)</div>
+              <div><span style="color:#f97316;">●</span> Orange: Severe (1.0m - 2.0m)</div>
+              <div><span style="color:#eab308;">●</span> Yellow: Moderate (0.5m - 1.0m)</div>
+              <div><span style="color:#38bdf8;">■</span> Blue: Emergency Hospital</div>
+              <div><span style="color:#34d399;">▲</span> Green: Relief Shelter</div>
+              <div><span style="color:#dc2626;">⛔</span> Road Closed</div>
+            </div>
+          </div>
+
+          <!-- Live Resource Allocation Quick Table -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <span class="panel-card-title">⚖️ Dynamic Multi-Resource Solver (Google OR-Tools MILP)</span>
+              <button class="btn btn-primary" onclick="SEOC_APP.switchTab('resources-view')">Detailed Matrix →</button>
+            </div>
+            <table class="alloc-table">
+              <thead>
+                <tr>
+                  <th>Vulnerability Zone</th>
+                  <th>Population</th>
+                  <th>NDRF Teams</th>
+                  <th>Rescue Boats</th>
+                  <th>Ambulances</th>
+                  <th>Optimization Status</th>
+                </tr>
+              </thead>
+              <tbody id="resource-alloc-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: AI Decision Intelligence & HITL Action Box -->
+        <div>
+          <!-- Officer Statutory Action Quick Box -->
+          <div class="panel-card" style="border-color: rgba(239,68,68,0.4);">
+            <div class="panel-card-header">
+              <span class="panel-card-title" style="color: #f87171;">🛡️ Human-in-the-Loop Action Console</span>
+              <span class="badge-zone badge-zone-critical">NDMA Sec 35</span>
+            </div>
+            <p style="font-size: 0.75rem; color: #cbd5e1; margin-bottom: 0.75rem;">
+              The AI optimization engine has computed <strong>2 urgent dispatch orders</strong> for the Musi flash inundation. Awaiting statutory commander signature.
+            </p>
+            <div id="hitl-orders-container"></div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="SEOC_APP.switchTab('hitl-view')">
+              Open Full Statutory Review Console →
+            </button>
+          </div>
+
+          <!-- Zone Selected Telemetry & XAI Mini Breakdown -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <span class="panel-card-title">🔍 Selected Zone Inspector</span>
+              <span class="chip-tag chip-cyan">SHAP Attribution</span>
+            </div>
+            <div id="map-zone-inspector">
+              <div style="color: #94a3b8; font-size: 0.78rem; text-align: center; padding: 1.5rem;">
+                Click any zone polygon on the map to inspect water level, topography, SHAP breakdown, and required relief supplies.
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Copilot Prompt -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <span class="panel-card-title">💬 AI Disaster Copilot</span>
+              <span class="chip-tag chip-purple">RAG Grounded</span>
+            </div>
+            <p style="font-size: 0.73rem; color: #94a3b8; margin-bottom: 0.5rem;">
+              Ask immediate questions grounded in NDMA guidelines and live sensor telemetry:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <button class="prompt-chip" style="text-align: left;" onclick="SEOC_APP.switchTab('copilot-view'); SEOC_COPILOT.askQuickPrompt('Why is Tolichowki classified as Critical?');">
+                • "Why is Tolichowki classified as Critical?"
+              </button>
+              <button class="prompt-chip" style="text-align: left;" onclick="SEOC_APP.switchTab('copilot-view'); SEOC_COPILOT.askQuickPrompt('What is the SOP for Musi river overflow?');">
+                • "What is the official SOP for Musi river overflow?"
+              </button>
+              <button class="prompt-chip" style="text-align: left;" onclick="SEOC_APP.switchTab('copilot-view'); SEOC_COPILOT.askQuickPrompt('Explain resource deficit in Moosarambagh.');">
+                • "Explain the rescue boat deficit in Moosarambagh."
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 2: FULL GIS DISASTER MAP
+         ----------------------------------------------------------------------- -->
+    <section id="gis-map-view" class="view-section">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <span class="panel-card-title">🗺️ Hyderabad Urban Flood GIS Tactical Map & Facilities Layer</span>
+          <div class="panel-tools">
+            <label class="layer-toggle-item" style="color:#fff;">
+              <input type="checkbox" id="toggle-layer-hospitals" checked> Hospitals (ICU)
+            </label>
+            <label class="layer-toggle-item" style="color:#fff;">
+              <input type="checkbox" id="toggle-layer-shelters" checked> Relief Shelters
+            </label>
+            <label class="layer-toggle-item" style="color:#fff;">
+              <input type="checkbox" id="toggle-layer-roads" checked> Blocked Roads
+            </label>
+          </div>
+        </div>
+        <div style="height: 600px; border-radius: 8px;" id="gis-map-fullscreen-placeholder">
+          <!-- The primary map canvas is re-rendered into view -->
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 3: SEVERITY PREDICTION & LSTM TIME-SERIES
+         ----------------------------------------------------------------------- -->
+    <section id="prediction-view" class="view-section">
+      <div class="grid-two-equal">
+        <!-- ML Classification -->
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">🤖 Real-Time Supervised Severity Prediction (XGBoost + ANN)</span>
+            <span class="chip-tag chip-red">Inference: 6.2ms</span>
+          </div>
+
+          <div class="severity-meter-display">
+            <div class="severity-rank-dial">
+              <div class="severity-number">4</div>
+              <div class="severity-label-tag">CRITICAL SEVERITY</div>
+            </div>
+
+            <div class="confidence-gauge-col">
+              <div class="gauge-row">
+                <span>Model Confidence</span>
+                <strong style="color: #38bdf8;">94.6%</strong>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill progress-critical" style="width: 94.6%;"></div>
+              </div>
+              
+              <div class="gauge-row" style="margin-top: 0.5rem;">
+                <span>Probability (Level 4 Critical)</span>
+                <strong>0.88</strong>
+              </div>
+              <div class="gauge-row">
+                <span>Probability (Level 3 Severe)</span>
+                <strong>0.10</strong>
+              </div>
+              <div class="gauge-row">
+                <span>Probability (Level 2 Moderate)</span>
+                <strong>0.02</strong>
+              </div>
+            </div>
+          </div>
+
+          <h4 style="font-size: 0.82rem; color: #fff; margin-bottom: 0.5rem;">Input Sensory Feature Telemetry:</h4>
+          <table class="feature-attr-table">
+            <thead>
+              <tr><th>Feature Variable</th><th>Observed Value</th><th>Normalized Scale</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Current Precipitation Intensity</td><td><strong>104.5 mm/h</strong></td><td>0.94 (Cloudburst)</td></tr>
+              <tr><td>Cumulative 24h Rainfall</td><td><strong>186.0 mm</strong></td><td>0.88 (Extremely Heavy)</td></tr>
+              <tr><td>Musi River Gauge Level</td><td><strong>515.1m MSL</strong></td><td>0.96 (+1.1m Danger)</td></tr>
+              <tr><td>Gauge Water Rise Velocity</td><td><strong>+1.8 m/h</strong></td><td>0.92 (Flash Surge)</td></tr>
+              <tr><td>Soil Saturation Index</td><td><strong>94.0%</strong></td><td>0.94 (Total Infiltration)</td></tr>
+              <tr><td>Basin Catchment Elevation</td><td><strong>498.2m MSL</strong></td><td>0.12 (Severe Depression)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Deep Learning LSTM Forecast -->
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">📈 24-Hour Deep Bi-LSTM Time-Series Flood Forecasting</span>
+            <span class="chip-tag chip-purple">TensorFlow / Keras</span>
+          </div>
+          <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.75rem;">
+            Bidirectional LSTM model trained on 15-minute sensor intervals forecasting Musi river gauge levels and severity trajectory for next 12 hours.
+          </p>
+          <div style="height: 320px;">
+            <canvas id="chart-lstm-forecast"></canvas>
+          </div>
+          <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; padding: 0.5rem; margin-top: 0.75rem; font-size: 0.72rem; color: #fca5a5;">
+            ⚠️ <strong>LSTM Warning:</strong> Inundation expected to peak at <strong>T+9 Hours (517.8m MSL)</strong>. Pre-emptive evacuation of all settlements within 750m of Musi river bank is mandatory under SOP-FLD-02.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 4: EXPLAINABLE AI (SHAP & LIME)
+         ----------------------------------------------------------------------- -->
+    <section id="xai-view" class="view-section">
+      <div class="grid-two-equal">
+        <!-- Local SHAP Waterfall Plot -->
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">🔍 Local SHAP Force / Waterfall Attribution</span>
+            <span class="chip-tag chip-cyan">Tolichowki / Nadeem Colony</span>
+          </div>
+          <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.5rem;">
+            Answers: <em>"WHY did the model classify this specific sector as Critical?"</em> (Red pushes toward Critical, Green mitigates).
+          </p>
+          <div style="height: 280px;">
+            <canvas id="chart-shap-local"></canvas>
+          </div>
+          <div id="xai-nl-summary" class="zone-inspector-box" style="font-size: 0.75rem; margin-top: 0.75rem;"></div>
+        </div>
+
+        <!-- Global Feature Importance -->
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">🌐 Global Feature Importance (TreeSHAP & Permutation)</span>
+            <span class="chip-tag chip-purple">Hyderabad Regional Model</span>
+          </div>
+          <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.5rem;">
+            Mean absolute SHAP value impact across all 150 GHMC municipal wards during extreme weather episodes.
+          </p>
+          <div style="height: 280px;">
+            <canvas id="chart-global-features"></canvas>
+          </div>
+          <div style="background: rgba(15,23,42,0.6); padding: 0.6rem; border-radius: 6px; margin-top: 0.75rem; font-size: 0.73rem; color: #94a3b8;">
+            <strong>Interpretation:</strong> Rainfall intensity (38%) and water surge velocity (28%) dominate the hazard classification, while basin elevation accounts for 18% of geographic susceptibility.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 5: DYNAMIC RESOURCE ALLOCATION (OR-TOOLS)
+         ----------------------------------------------------------------------- -->
+    <section id="resources-view" class="view-section">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <span class="panel-card-title">⚖️ Dynamic Multi-Resource Allocation Solver (Google OR-Tools MILP)</span>
+          <span class="chip-tag chip-cyan">Optimization Engine</span>
+        </div>
+
+        <div class="resource-grid">
+          <div class="resource-stat-box">
+            <div class="resource-stat-label">NDRF Search & Rescue Teams</div>
+            <div class="resource-stat-val">10 / 12</div>
+            <div class="resource-stat-sub">Allocated (83% Capacity)</div>
+          </div>
+          <div class="resource-stat-box">
+            <div class="resource-stat-label">Motorized Rescue Boats</div>
+            <div class="resource-stat-val">27 / 31</div>
+            <div class="resource-stat-sub">Deployed in Inundated Sectors</div>
+          </div>
+          <div class="resource-stat-box">
+            <div class="resource-stat-label">ALS & BLS Ambulances</div>
+            <div class="resource-stat-val">35 / 40</div>
+            <div class="resource-stat-sub">Active Triage Transport</div>
+          </div>
+          <div class="resource-stat-box">
+            <div class="resource-stat-label">Relief Food & Water Supply</div>
+            <div class="resource-stat-val">81,000 Pkts</div>
+            <div class="resource-stat-sub">Dispatched to Relief Camps</div>
+          </div>
+        </div>
+
+        <div style="height: 280px; margin-bottom: 1.5rem;">
+          <canvas id="chart-resource-alloc"></canvas>
+        </div>
+
+        <div style="background: rgba(15,23,42,0.7); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1rem;">
+          <h4 style="font-size: 0.85rem; color: #fff; margin-bottom: 0.5rem;">Mathematical Optimization Formulation (MILP):</h4>
+          <code style="font-family: monospace; font-size: 0.75rem; color: #38bdf8;">
+            Minimize Z = ∑ (w_t × TravelDistance_ij × X_ij) + BigM × ∑ (UnmetDemand_j)<br>
+            Subject to:<br>
+            • ∑ X_ij ≤ AvailableSupply_i  (Resource Availability Constraint)<br>
+            • Capacity_j × Evacuees_j ≤ ShelterCapacity_j  (Relief Center Limit)<br>
+            • HospitalTriage(ICU_k) ≤ TraumaLimit_k  (Emergency Medical Care Constraint)
+          </code>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 6: HUMAN-IN-THE-LOOP OFFICER CONSOLE (HITL)
+         ----------------------------------------------------------------------- -->
+    <section id="hitl-view" class="view-section">
+      <div class="hitl-banner">
+        <div class="hitl-banner-text">
+          <h3>🛡️ Statutory Human-in-the-Loop Officer Authorization Console</h3>
+          <p>Under NDMA Section 35 and Telangana State Disaster Management Rules, AI recommendations are advisory and require authorized officer approval prior to actual physical mobilization.</p>
+        </div>
+        <div class="stamp-box">AUTHORIZATION REQUIRED</div>
+      </div>
+
+      <div class="grid-war-room">
+        <div>
+          <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: #fff;">Pending AI Dispatch Recommendations</h3>
+          <!-- Dynamic Order Cards populated by SEOC_HITL -->
+          <div id="hitl-full-orders-container"></div>
+        </div>
+
+        <div>
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <span class="panel-card-title">📜 Immutable Statutory Audit Trail</span>
+              <span class="badge-official">Audited</span>
+            </div>
+            <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 0.5rem;">
+              Cryptographically hashed log of all officer authorizations, modifications, and emergency overrides.
+            </p>
+            <table class="alloc-table" style="font-size: 0.72rem;">
+              <thead>
+                <tr><th>Log ID</th><th>Time</th><th>Officer</th><th>Order</th><th>Sector</th><th>Action</th><th>Details</th></tr>
+              </thead>
+              <tbody id="audit-logs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 7: HOSPITALS & RELIEF SHELTERS
+         ----------------------------------------------------------------------- -->
+    <section id="hospitals-view" class="view-section">
+      <div class="grid-two-equal">
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">🏥 Emergency Hospital Triage & ICU Bed Availability</span>
+            <span class="chip-tag chip-cyan">Live Health Network</span>
+          </div>
+          <table class="alloc-table">
+            <thead>
+              <tr><th>Hospital Facility</th><th>ICU Beds (Avail/Total)</th><th>Oxygen Beds</th><th>Triage Status</th><th>Proximity</th></tr>
+            </thead>
+            <tbody id="hospitals-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">⛺ Flood Relief Shelters & Intake Camps</span>
+            <span class="chip-tag chip-purple">GHMC Relief Registry</span>
+          </div>
+          <table class="alloc-table">
+            <thead>
+              <tr><th>Shelter Complex</th><th>Occupancy Rate</th><th>Ration Packs</th><th>Water Supply</th><th>Grid Status</th></tr>
+            </thead>
+            <tbody id="shelters-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 8: AI / RAG DISASTER COPILOT
+         ----------------------------------------------------------------------- -->
+    <section id="copilot-view" class="view-section">
+      <div class="panel-card" style="max-width: 900px; margin: 0 auto;">
+        <div class="panel-card-header">
+          <span class="panel-card-title">💬 SEOC Disaster AI Copilot & Knowledge Retrieval (RAG)</span>
+          <span class="chip-tag chip-purple">NDMA / TSDMP / GHMC SOPs</span>
+        </div>
+
+        <div class="copilot-container">
+          <div id="copilot-messages" class="copilot-messages"></div>
+
+          <div class="copilot-quick-prompts">
+            <button class="prompt-chip" onclick="SEOC_COPILOT.askQuickPrompt('Why is Tolichowki classified as Critical?')">Why is Tolichowki Critical?</button>
+            <button class="prompt-chip" onclick="SEOC_COPILOT.askQuickPrompt('What is the SOP for Musi river overflow?')">Musi River Overflow Protocol</button>
+            <button class="prompt-chip" onclick="SEOC_COPILOT.askQuickPrompt('Explain resource deficit in Moosarambagh.')">Moosarambagh Boat Deficit</button>
+            <button class="prompt-chip" onclick="SEOC_COPILOT.askQuickPrompt('Generate emergency evacuation checklist.')">Evacuation Checklist</button>
+          </div>
+
+          <div class="copilot-input-bar">
+            <input type="text" id="copilot-input" placeholder="Ask about live flood severity, XAI causal factors, or NDMA rescue procedures...">
+            <button id="copilot-send-btn" class="btn btn-primary">Transmit ↗</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 9: OFFICIAL SITUATION REPORT (SITREP)
+         ----------------------------------------------------------------------- -->
+    <section id="sitrep-view" class="view-section">
+      <div style="text-align: right; margin-bottom: 1rem;">
+        <button class="btn btn-primary" onclick="SEOC_APP.printSitRep()">🖨️ Print / Export Official PDF</button>
+      </div>
+
+      <div class="sitrep-paper">
+        <div class="sitrep-header">
+          <h2>GOVERNMENT OF TELANGANA</h2>
+          <p style="font-size: 0.9rem; font-weight: bold;">STATE EMERGENCY OPERATIONS CENTRE (SEOC) — DISASTER MANAGEMENT DIVISION</p>
+          <div class="sitrep-meta">
+            <span>SITUATION REPORT (SITREP) NO: 04/HYD-MONSOON/2026</span>
+            <span>DATE: 08-OCT-2026 | TIME: 14:00 IST</span>
+          </div>
+        </div>
+
+        <div class="sitrep-body">
+          <h3>1. EXECUTIVE CRISIS SUMMARY</h3>
+          <p>
+            An extreme convective cloudburst has occurred over the Greater Hyderabad Municipal Corporation (GHMC) catchment area. 
+            Rainfall intensity recorded at 104.5 mm/hr with cumulative 24-hour rainfall touching 186.0 mm. 
+            The Musi River has surged to <strong>515.1 meters MSL</strong>, exceeding the statutory Danger Level by 1.1 meters. 
+            4 municipal zones have been designated at <strong>Severity Level 4 (CRITICAL)</strong> by the Explainable AI Decision Support System.
+          </p>
+
+          <h3>2. CASUALTY & POPULATION IMPACT</h3>
+          <ul>
+            <li><strong>Total Population in Risk Buffer:</strong> 142,000 citizens across 4 high-risk circles.</li>
+            <li><strong>Evacuated to Date:</strong> 14,050 persons accommodated across 4 active municipal indoor stadiums.</li>
+            <li><strong>Casualties:</strong> Zero fatalities reported; 42 minor injuries admitted to Gandhi & Osmania General Hospitals.</li>
+          </ul>
+
+          <h3>3. CRITICAL SECTORS & XAI CAUSAL DRIVERS</h3>
+          <ul>
+            <li><strong>Tolichowki / Nadeem Colony (Level 4):</strong> Severe drainage backflow from Shah Hatim Talab. Inundation depth 2.6m. (SHAP: Rainfall +38%, Water Level +29%).</li>
+            <li><strong>Moosarambagh / Chaderghat (Level 4):</strong> Musi river causeway overtopped by 2.2m. Traffic completely blocked. (SHAP: River Surge +42%).</li>
+            <li><strong>Begumpet / Picket Nala (Level 3):</strong> Severe railway culvert backflow. Airport road flyover operational.</li>
+          </ul>
+
+          <h3>4. OR-TOOLS EMERGENCY RESOURCE DEPLOYMENT</h3>
+          <p>
+            The dynamic Mixed Integer Linear Programming (MILP) solver has deployed <strong>10 NDRF Teams</strong> and <strong>27 Inflatable Rescue Boats</strong>. 
+            3 reserve boats from Gachibowli are currently mobilized to cover the Moosarambagh deficit. All 83 available ICU beds are reserved for emergency triage.
+          </p>
+
+          <div class="sitrep-stamp-box">
+            <div class="stamp-box">
+              OFFICIALLY AUTHORIZED<br>
+              RAKESH GUNDALA (IAS)<br>
+              COMMANDER, SEOC TELANGANA
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 10: MODEL BENCHMARK ANALYTICS
+         ----------------------------------------------------------------------- -->
+    <section id="analytics-view" class="view-section">
+      <div class="grid-two-equal">
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">📊 Multi-Model Accuracy & Macro F1-Score Comparison</span>
+            <span class="chip-tag chip-purple">Validation Cohort</span>
+          </div>
+          <div style="height: 300px;">
+            <canvas id="chart-model-comparison"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">🔬 Quantitative Model Performance Metrics</span>
+            <span class="chip-tag chip-cyan">MLflow Tracked</span>
+          </div>
+          <table class="alloc-table">
+            <thead>
+              <tr><th>Model Architecture</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>Macro F1</th><th>Latency</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Logistic Regression (Baseline)</td><td>74.2%</td><td>0.71</td><td>0.68</td><td>0.69</td><td>2.1 ms</td></tr>
+              <tr><td>Decision Tree (CART)</td><td>81.5%</td><td>0.79</td><td>0.77</td><td>0.78</td><td>1.8 ms</td></tr>
+              <tr><td>Random Forest (100 Trees)</td><td>91.8%</td><td>0.90</td><td>0.89</td><td>0.89</td><td>8.4 ms</td></tr>
+              <tr><td><strong style="color:#38bdf8;">XGBoost Classifier</strong></td><td><strong>94.6%</strong></td><td><strong>0.93</strong></td><td><strong>0.94</strong></td><td><strong>0.94</strong></td><td><strong>6.2 ms</strong></td></tr>
+              <tr><td><strong style="color:#c084fc;">Deep Bi-LSTM (24h)</strong></td><td><strong>95.8%</strong></td><td><strong>0.95</strong></td><td><strong>0.96</strong></td><td><strong>0.95</strong></td><td><strong>14.5 ms</strong></td></tr>
+            </tbody>
+          </table>
+          <p style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.75rem;">
+            Deep Bi-LSTM demonstrates superior recall on minority catastrophic flood classes (0.96 Recall), preventing fatal false-negative classifications.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- -----------------------------------------------------------------------
+         VIEW 11: SYSTEM TELEMETRY & HEALTH
+         ----------------------------------------------------------------------- -->
+    <section id="health-view" class="view-section">
+      <div class="grid-three-col">
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">⚡ Ingestion Pipeline</span>
+            <span class="badge-official">Healthy</span>
+          </div>
+          <p style="font-size: 0.75rem; color: #cbd5e1;">IMD Radar REST Connector: <strong>200 OK (38ms)</strong></p>
+          <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">Musi River Gauge Telemetry: <strong>Active (12 sec poll)</strong></p>
+          <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">GHMC Drain Flow Sensors: <strong>98.4% online</strong></p>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">🧠 Inference Microservices</span>
+            <span class="badge-official">Healthy</span>
+          </div>
+          <p style="font-size: 0.75rem; color: #cbd5e1;">XGBoost Severity Service: <strong>0.006s per batch</strong></p>
+          <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">TreeSHAP Explainer: <strong>Pre-computed caches ready</strong></p>
+          <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">TensorFlow Bi-LSTM Engine: <strong>GPU accelerated</strong></p>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">⚖️ Optimization & DB</span>
+            <span class="badge-official">Healthy</span>
+          </div>
+          <p style="font-size: 0.75rem; color: #cbd5e1;">Google OR-Tools MILP Solver: <strong>42ms solve time</strong></p>
+          <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">PostGIS Spatial Queries: <strong>Indexed (GiST)</strong></p>
+          <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.3rem;">RAG FAISS Vector Store: <strong>48 SOP manuals indexed</strong></p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL: MODIFY ALLOCATION
+       ========================================================================= -->
+  <div id="modal-modify-allocation" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span class="modal-title">✎ Statutory Modification of AI Resource Dispatch</span>
+        <button class="modal-close" onclick="document.getElementById('modal-modify-allocation').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modify-order-id">
+
+        <div class="form-group">
+          <label>NDRF Rescue Teams to Mobilize</label>
+          <input type="number" id="modify-teams-input" min="1" max="10">
+        </div>
+
+        <div class="form-group">
+          <label>Inflatable Motorized Rescue Boats (IRBs)</label>
+          <input type="number" id="modify-boats-input" min="1" max="25">
+        </div>
+
+        <div class="form-group">
+          <label>Advanced Life Support (ALS) Ambulances</label>
+          <input type="number" id="modify-amb-input" min="1" max="30">
+        </div>
+
+        <div class="form-group">
+          <label>Statutory Officer Justification (Mandatory for Audit Trail)</label>
+          <textarea id="modify-reason-input" rows="3"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.5rem;">
+          <button class="btn btn-reject" onclick="document.getElementById('modal-modify-allocation').classList.remove('open')">Cancel</button>
+          <button class="btn btn-approve" onclick="SEOC_HITL.submitModification()">✓ Authorize Altered Dispatch</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet GIS JS CDN -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Application Logic Modules -->
+  <script src="js/data.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/copilot.js"></script>
+  <script src="js/hitl.js"></script>
+  <script src="js/simulation.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    // Link HITL full list to orders
+    document.addEventListener('DOMContentLoaded', () => {
+      const fullHitl = document.getElementById('hitl-full-orders-container');
+      const warHitl = document.getElementById('hitl-orders-container');
+      if (fullHitl && warHitl) {
+        fullHitl.innerHTML = warHitl.innerHTML;
+      }
+    });
+  </script>
+</body>
+</html>
