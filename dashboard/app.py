@@ -145,10 +145,10 @@ if uploaded_file is not None:
         if lat_col and lon_col:
             df_zones = pd.DataFrame({
                 "Zone": user_df[name_col] if name_col else [f"Zone {i+1}" for i in range(len(user_df))],
-                "lat": user_df[lat_col].astype(float),
-                "lon": user_df[lon_col].astype(float),
-                "Severity": user_df[sev_col].astype(int) if sev_col else [3]*len(user_df),
-                "WaterLevel_m": user_df[water_col].astype(float) if water_col else [1.5]*len(user_df)
+                "lat": pd.to_numeric(user_df[lat_col], errors='coerce').fillna(17.3850),
+                "lon": pd.to_numeric(user_df[lon_col], errors='coerce').fillna(78.4867),
+                "Severity": pd.to_numeric(user_df[sev_col], errors='coerce').fillna(3).astype(int) if sev_col else [3]*len(user_df),
+                "WaterLevel_m": pd.to_numeric(user_df[water_col], errors='coerce').fillna(1.5).astype(float) if water_col else [1.5]*len(user_df)
             })
     except Exception as e:
         st.error(f"Error parsing CSV: {e}")
@@ -174,8 +174,12 @@ with tab1:
     col_map_left, col_map_right = st.columns([2, 1])
     
     with col_map_left:
-        st.map(df_zones, latitude='lat', longitude='lon', size="Severity")
-        st.caption("Map displays flood zones sized by severity rating. (For full interactive WebGIS, view dashboard/index.html)")
+        # Compatible across all Streamlit versions (1.23.1 and newer)
+        try:
+            st.map(df_zones, latitude='lat', longitude='lon', size="Severity")
+        except TypeError:
+            st.map(df_zones[["lat", "lon"]])
+        st.caption("Map displays flood sectors across Hyderabad. (For full interactive WebGIS, view dashboard/index.html)")
 
     with col_map_right:
         st.markdown("#### High-Risk Sector Telemetry")
