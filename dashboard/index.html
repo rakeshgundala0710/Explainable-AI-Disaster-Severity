@@ -50,6 +50,12 @@
     </div>
 
     <div class="header-actions">
+      <!-- Direct Global CSV Upload Button -->
+      <button class="btn btn-primary" onclick="document.getElementById('global-csv-file-input').click()" style="background: linear-gradient(135deg, #0284c7, #2563eb); border: 1px solid #38bdf8; font-weight: 700; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); padding: 0.45rem 1rem;">
+        📁 Upload CSV Dataset
+      </button>
+      <input type="file" id="global-csv-file-input" accept=".csv" style="display: none;" onchange="if(this.files && this.files[0]) { SEOC_APP.handleCsvFile(this.files[0]); }">
+
       <div class="telemetry-time">
         <div class="time-val" id="live-clock-time">--:--:-- IST</div>
         <div class="date-val" id="live-clock-date">-- --- 2026</div>
@@ -172,6 +178,30 @@
          VIEW 1: WAR ROOM OVERVIEW
          ----------------------------------------------------------------------- -->
     <section id="war-room-view" class="view-section active-view">
+      <!-- Direct CSV Upload Banner for Fast Access -->
+      <div style="background: linear-gradient(90deg, rgba(2, 132, 199, 0.18), rgba(15, 23, 42, 0.85)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-md); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="font-size: 1.75rem;">📁</div>
+          <div>
+            <strong style="color: #38bdf8; font-size: 0.9rem;">Upload Custom Flood / Disaster Dataset (CSV)</strong>
+            <p style="font-size: 0.72rem; color: #cbd5e1; margin-top: 0.15rem;">
+              Upload your own municipal sector data to dynamically recalculate flood risk polygons, SHAP attributions, and OR-Tools rescue resources.
+            </p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.6rem; align-items: center;">
+          <button class="btn btn-primary" onclick="document.getElementById('global-csv-file-input').click()" style="background: #0284c7; box-shadow: 0 0 12px rgba(56, 189, 248, 0.5); font-weight: 700; padding: 0.45rem 1rem;">
+            📁 Select & Upload CSV File
+          </button>
+          <button class="btn btn-modify" onclick="SEOC_APP.downloadSampleCsv()" style="padding: 0.45rem 0.85rem;">
+            ⬇️ Download Sample CSV
+          </button>
+          <button class="btn btn-primary" onclick="SEOC_APP.switchTab('dataset-view')" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-subtle);">
+            View Dataset Table →
+          </button>
+        </div>
+      </div>
+
       <div class="grid-war-room">
         <!-- Left: Map Preview & Threat Matrix -->
         <div>
@@ -181,6 +211,9 @@
                 <span>📍 Geospatial Emergency Topology — Hyderabad Flood Risk Polygons</span>
               </span>
               <div class="panel-tools">
+                <button class="btn btn-primary" onclick="document.getElementById('global-csv-file-input').click()" style="font-size: 0.7rem; padding: 0.25rem 0.6rem; background: #0369a1;">
+                  📁 Ingest CSV
+                </button>
                 <span class="chip-tag chip-red">Level 4: Red Alert Active</span>
                 <button class="btn btn-primary" onclick="SEOC_APP.switchTab('gis-map-view')">Maximize Map ↗</button>
               </div>

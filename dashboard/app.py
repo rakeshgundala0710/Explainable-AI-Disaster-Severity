@@ -97,10 +97,29 @@ with kpi5:
 
 st.divider()
 
-# Sidebar Dataset Uploader
+# Main Page Dataset Uploader Banner
+with st.expander("📁 Upload Custom Disaster / Flood CSV Dataset (Instant Ingestion)", expanded=True):
+    col_up1, col_up2 = st.columns([3, 1])
+    with col_up1:
+        main_uploaded_file = st.file_uploader("Select or Drag & Drop Disaster CSV File:", type=["csv"], key="main_page_csv_uploader")
+    with col_up2:
+        sample_path = os.path.join(os.path.dirname(__file__), "..", "data", "sample_hyderabad_flood_data.csv")
+        if os.path.exists(sample_path):
+            with open(sample_path, "r") as f:
+                csv_bytes = f.read()
+            st.download_button(
+                label="⬇️ Download Sample CSV",
+                data=csv_bytes,
+                file_name="sample_hyderabad_flood_data.csv",
+                mime="text/csv"
+            )
+
+# Sidebar Dataset Uploader as alternative
 st.sidebar.divider()
 st.sidebar.subheader("📁 Upload Custom Dataset")
-uploaded_file = st.sidebar.file_uploader("Upload Disaster CSV Dataset", type=["csv"])
+sidebar_uploaded_file = st.sidebar.file_uploader("Upload Disaster CSV Dataset", type=["csv"], key="sidebar_csv_uploader")
+
+uploaded_file = main_uploaded_file if main_uploaded_file is not None else sidebar_uploaded_file
 
 # Default Hyderabad Data
 default_zones_dict = {
@@ -115,7 +134,7 @@ df_zones = pd.DataFrame(default_zones_dict)
 if uploaded_file is not None:
     try:
         user_df = pd.read_csv(uploaded_file)
-        st.sidebar.success(f"✓ Loaded {len(user_df)} rows from {uploaded_file.name}")
+        st.success(f"✓ Ingested {len(user_df)} sectors from {uploaded_file.name}! Map and resource telemetry updated.")
         # Map common column names if present
         lat_col = next((c for c in user_df.columns if c.lower() in ['latitude', 'lat']), None)
         lon_col = next((c for c in user_df.columns if c.lower() in ['longitude', 'lon', 'lng']), None)
@@ -132,7 +151,7 @@ if uploaded_file is not None:
                 "WaterLevel_m": user_df[water_col].astype(float) if water_col else [1.5]*len(user_df)
             })
     except Exception as e:
-        st.sidebar.error(f"Error parsing CSV: {e}")
+        st.error(f"Error parsing CSV: {e}")
 
 # Navigation Tabs
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
